@@ -1,0 +1,206 @@
+#!/bin/bash
+
+# This script is for running a prod-5ish 7 MST or SST simulation for Arkaroola.
+
+if [ "$1" = "--help" ]; then
+   echo "Run an Arkatoola (CTR) 7 MST or SST simulation with"
+   echo "storing only the CORSIKA IACT output with"
+   echo "prod-5ish configurations for Arkaroola site, primary type, azimuth, and zenith angle."
+   echo ""
+   echo "Syntax: $0 [ option(s) ] choice"
+   echo "choice is energy ranges 1 through 4 (0.01-0.5,0.3-5,3-50,30-500 TeV)"
+   echo "with the first letter of the primary particle"
+   echo "e.g. 1g, 1p, 4d etc."
+   echo ""
+   echo "Pointing direction (north, east, south, west),"
+   echo "energy spectrum slope, and zenith must be set in file."
+   echo ""
+   exit
+fi
+
+if [ -x ${HOME}/bin/init_batch_job ]; then
+   . ${HOME}/bin/init_batch_job
+fi
+
+extra="-DWITHOUT_MULTIPIPE -DYEAR2020"
+
+pointing=north
+zenith=20
+slope=-2
+
+export PROD4_ZENITH="${zenith}"
+
+input_tmpl="INPUTS_Arkaroola-1000m"
+
+defs=""
+defs="${defs} -DESLOPE=${slope} -DNSCAT=20"
+
+choice=$1
+
+case "$choice" in
+   1g|1p|1d)
+      defs="${defs} -DEMIN=0.01 -DEMAX=0.5"
+      ;;
+   2g|2p|2d)
+      defs="${defs} -DEMIN=0.3 -DEMAX=5"
+      ;;
+   3g|3p|3d)
+      defs="${defs} -DEMIN=3 -DEMAX=50"
+      ;;
+   4g|4p|4d)
+      defs="${defs} -DEMIN=30 -DEMAX=500"
+      ;;
+   *)
+      echo "Choose from ranges 1 to 4 plus primary letter (1g,1p,1d etc.)"
+      exit 1
+      ;;
+esac
+
+case "$choice" in
+   1g|2g|3g|4g)
+      defs="${defs} -DPRIMARY_GAMMA"
+      primary="gamma"
+      ;;
+   1d|2d|3d|4d)
+      defs="${defs} -DPRIMARY_GAMMA_DIFFUSE"
+      primary="gamma_diffuse"
+      ;;
+   1p|2p|3p|4p)
+      defs="${defs} -DPRIMARY_PROTON"
+      primary="proton"
+      ;;
+   *)
+      echo "Choose from ranges 1 to 4 plus primary letter (1g,1p,1d etc.)"
+      exit 1
+      ;;
+esac
+
+case "$choice" in
+   1g|1p|1d)
+      defs="${defs} -DCSCAT=500"
+      ;;
+   2g)
+      defs="${defs} -DCSCAT=800"
+      ;;
+   2p|2d|3g)
+      defs="${defs} -DCSCAT=900"
+      ;;
+   3p|3d)
+      defs="${defs} -DCSCAT=1200"
+      ;;
+   4g)
+      defs="${defs} -DCSCAT=1000"
+      ;;
+   4p|4d)
+      defs="${defs} -DCSCAT=1500"
+      ;;
+   *)
+      echo "Choose from ranges 1 to 4 plus primary letter (1g,1p,1d etc.)"
+      exit 1
+      ;;
+esac
+
+case "$pointing" in
+   north)
+      defs="${defs} -DFROM_NORTH"
+      pointing="North"
+      ;;
+   south)
+      defs="${defs} -DFROM_SOUTH"
+      pointing="South"
+      ;;
+   east)
+      defs="${defs} -DFROM_EAST"
+      pointing="East"
+      ;;
+   west)
+      defs="${defs} -DFROM_WEST"
+      pointing="West"
+      ;;
+   *)
+      echo "Undefined pointing direction $pointing"
+      exit 1
+      ;;
+esac
+
+case "$choice" in
+   1g)
+      needed_showers=30000000
+      ;;
+   1p)
+      needed_showers=2000000000
+      ;;
+   1d)
+      needed_showers=40000000
+      ;;
+   2g)
+      needed_showers=440000
+      ;;
+   2p)
+      needed_showers=120000000
+      ;;
+   2d)
+      needed_showers=3600000
+      ;;
+   3g)
+      needed_showers=170000
+      ;;
+   3p)
+      needed_showers=9400000
+      ;;
+   3d)
+      needed_showers=1100000
+      ;;
+   4g)
+      needed_showers=230000
+      ;;
+   4p)
+      needed_showers=5900000
+      ;;
+   4d)
+      needed_showers=550000
+      ;;
+   *)
+      echo "Choose from ranges 1 to 4 plus primary letter (1g,1p,1d etc.)"
+      exit 1
+      ;;
+esac
+
+nshow=$((needed_showers / 20 / 100))
+defs="${defs} -DNSHOW=${nshow}"
+
+export CTA_PATH=/fast/users/a1779903/mc_simtels/CTA_MC
+
+. ${CTA_PATH}/examples_common.sh
+
+echo ""
+echo "This is a prod-5ish 7 MST or SST run with primaries of type ${primary} from ${pointing} at z=${zenith} deg."
+echo "Output from CORSIKA IACT interface is stored for later processing."
+echo ""
+
+cd ${CORSIKA_DATA} || exit 1
+
+inputs_tmp="inputs.tmp.${HOSTNAME}.$$.Arkaroola.${primary}.${pointing}.${zenith}"
+
+# Note: preprocessing with cpp would also work but pfp is less intrusive (retains comments, no '# nn' lines added).
+${SIM_TELARRAY_PATH}/bin/pfp -V $defs $extra - < ${CORSIKA_PATH}/${input_tmpl} \
+   > "$inputs_tmp"
+
+${SIM_TELARRAY_PATH}/bin/corsika_autoinputs \
+  --run ${CORSIKA_PATH}/corsika \
+  -p ${CORSIKA_DATA} \
+  "$inputs_tmp" || exit 1
+
+echo "Waiting 10 seconds for output pipes to get finished ..."
+sleep 10
+
+#rm "$inputs_tmp"
+
+echo ""
+echo "CTA Prod-5ish 7 MST or SST run for site Arkaroola, primary $primary, showers coming from $pointing, zenith angle $zenith complete."
+echo ""
+if [ ! -z "${FINDDATA}" ]; then
+   echo "New data:"
+   find ${SIM_TELARRAY_DATA} -type f -mmin -1 | sed 's:^.*/\(Data/sim.*\)$:\1:'
+   echo ""
+fi

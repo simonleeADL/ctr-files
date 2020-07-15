@@ -1,0 +1,163 @@
+* CORSIKA inputs file template for CTA prod-4 simulations at 20 deg zenith angle.
+* Includes alternatives for different primaries (selected by pre-processor),
+* for PRMPAR, ERANGE, VIEWCONE, CSCAT parameters.
+* Includes site definitions for Paranal (CTA-South) site only,
+* for OBSLEV, ATMOSPHERE, and MAGNET parameters.
+* Showers can come from North (default), South, East, or West.
+* Number of showers to be simulated needs to be adapted to run duration for each primary type.
+* SEEDs need to be re-generated for each simulation run separately!!!
+*
+* =============== Corsika INPUTS =======================
+*
+* [ Job parameters ]
+*
+RUNNR   1                               // Number of run, to be auto-numbered by job submission
+EVTNR   1                               // Number of first shower event (usually 1)
+ESLOPE  -2.0          // Slope of primary energy spectrum (-2.0 is equal CPU time per decade)
+*
+* [ Random number generator: 4 sequences used in IACT mode ]
+*
+SEED   385928125   401   0              // Seed for 1st random number sequence, to be re-generated
+SEED   827619802   859   0              // Seed for 2nd random number sequence, to be re-generated
+SEED   195989238   390   0              // Seed for 3rd random number sequence, to be re-generated
+SEED   539053819   323   0              // Seed for 4th random number sequence, to be re-generated
+*
+* [ Primary particle options ]
+*
+#ifdef PRIMARY_GAMMA
+PRMPAR  1             // Particle type of prim. particle (1: gamma; 3: elec, 14: proton, 402: helium)
+IACT setenv PRMNAME gamma  // If you want to use the name of the primary in a generated filename.
+#endif
+#ifdef PRIMARY_GAMMA_DIFFUSE
+PRMPAR  1             // Particle type of prim. particle (1: gamma; 3: elec, 14: proton, 402: helium)
+IACT setenv PRMNAME gamma-diffuse
+#define DIFFUSE 1
+#endif
+#ifdef PRIMARY_PROTON
+PRMPAR  14            // Particle type of prim. particle (14: proton)
+IACT setenv PRMNAME proton
+#define DIFFUSE 1
+#endif
+*
+THETAP  20.  20.      // Range of zenith angles (degree)
+IACT setenv ZA 20
+* 
+*Geomagnetic field aligned as predicted for year 2020.0.
+#define AZM_FROM_SOUTH -7.233
+#define AZM_FROM_EAST  82.767
+#define AZM_FROM_NORTH 172.767
+#define AZM_FROM_WEST  262.767
+* 
+#if defined(FROM_SOUTH)
+PHIP $(AZM_FROM_SOUTH) $(AZM_FROM_SOUTH)  // CORSIKA azimuth angles (degree) for primaries coming from South.
+IACT setenv AZM 180     // Corresponding astronomical azimuth, from geographical North towards East.
+#elif defined(FROM_EAST)
+PHIP $(AZM_FROM_EAST) $(AZM_FROM_EAST)  // CORSIKA azimuth angles (degree) for primaries coming from East.
+IACT setenv AZM 90      // Corresponding astronomical azimuth, from geographical North towards East.
+#elif defined(FROM_WEST)
+PHIP $(AZM_FROM_WEST) $(AZM_FROM_WEST) // CORSIKA azimuth angles (degree) for primaries coming from West.
+IACT setenv AZM 270     // Corresponding astronomical azimuth, from geographical North towards East.
+#else
+PHIP $(AZM_FROM_NORTH) $(AZM_FROM_NORTH) // CORSIKA azimuth angles (degree) for primaries coming from North.
+IACT setenv AZM 0       // Corresponding astronomical azimuth, from geographical North towards East.
+#endif
+*
+#ifndef DIFFUSE
+VIEWCONE 0. 0.        // Can be a cone around fixed THETAP/PHIP (gamma point source)
+#else
+VIEWCONE 0. 10.     // Diffuse components (gammas, electrons, protons & nuclei)
+#endif
+*
+*  Optionally override prepared demo run settings
+*
+#ifdef NSHOW
+NSHOW    $(NSHOW)            // Requires NSHOW environment variable.
+#endif
+#ifdef EMIN
+# ifdef EMAX
+ERANGE   $(EMIN)E3 $(EMAX)E3 // Requires EMIN and EMAX in units of TeV.
+# endif
+#endif
+#ifdef ESLOPE
+ESLOPE $(ESLOPE)             // Requires spectral slope ESLOPE (<0)
+#endif
+*
+* [ Site specific options ]
+*
+ATMOSPHERE 10 Y
+MAGNET 26.3260 -50.0841
+* 
+ARRANG $(AZM_FROM_SOUTH)  // Necessary rotation angle to account for B field declination (deg.)
+* 
+* [ Core range ]
+*
+#ifndef DIFFUSE
+CSCAT  10  2000e2  0. // Use shower several times (gammas, point source only)
+#else
+CSCAT  20  2500e2  0. // Use shower several times (protons+electrons+..., larger area for diffuse origin)
+#endif
+#ifdef NSCAT
+# ifdef CSCAT
+CSCAT    $(NSCAT) $(CSCAT)E2 0. // Requires NSCAT (10/20) and CSCAT (in units of meters).
+# endif
+#endif
+*
+* [ Telescope positions, for IACT option ] 
+*
+OBSLEV 1000.E2
+*
+*
+#define MSTHT  9.00E2
+#define MSTRAD 9.60E2
+TELESCOPE      0.000E2    0.000E2     $(MSTHT)     $(MSTRAD)
+TELESCOPE      80.000E2   0.000E2     $(MSTHT)     $(MSTRAD)
+TELESCOPE      -40.000E2  -69.282E2   $(MSTHT)     $(MSTRAD)
+TELESCOPE      -40.000E2  69.282E2    $(MSTHT)     $(MSTRAD)
+TELESCOPE      160.000E2  0.000E2     $(MSTHT)     $(MSTRAD)
+TELESCOPE      -80.000E2  -138.564E2  $(MSTHT)     $(MSTRAD)
+TELESCOPE      -80.000E2  138.564E2   $(MSTHT)     $(MSTRAD)
+*
+* [Interaction flags]
+*
+FIXHEI  0.  0          // First interaction height & target (0. 0 for random)
+FIXCHI  0.             // Starting altitude (g/cm**2). 0. is at boundary to space.
+TSTART  T              // Needed for emission and scattering of primary
+ECUTS   0.3  0.1  0.020  0.020         // Energy cuts for particles
+MUADDI  F                              // Additional info for muons not needed
+MUMULT  T                              // Muon multiple scattering angle
+LONGI   T  20.  F  F                   // Longit.distr. & step size & fit
+MAXPRT  0                              // Max. number of printed events
+ECTMAP  1.E6                           // Cut on gamma factor for printout
+STEPFC  1.0                            // Mult. scattering step length factor
+*
+* [ Cherenkov emission parameters ]
+*
+CERSIZ  5.         // Not above 10 for super/ultra-bialkali QE; 7 is fairly OK; 5 should be safe.
+CERFIL  F                              // No old-style Cherenkov output to extra file
+CWAVLG  240.  1000.                    // Cherenkov wavelength band - note SSTs sensitive into IR region.
+*
+* [ Debugging and output options ]
+*
+DEBUG   F  6  F  1000000               // Debug flag and logical unit for output
+DATBAS yes                             // Write a file with parameters used
+DIRECT  /dev/null                      // /dev/null means no normal CORSIKA data written
+#ifdef WITHOUT_MULTIPIPE
+* TELFIL cta-prod5-arkaroola-baseline.corsika.gz       // If telescope simulation not done directly in pipe
+TELFIL run${RUNNR}_${PRMNAME}_za${ZA}deg_azm${AZM}deg-arkaroola-baseline${extra_suffix2}.corsika.zst
+#else
+* TELFIL |${SIM_TELARRAY_PATH}/run_sim_cta-prod5-arkaroola-baseline:100:100:1     // Telescope photon bunch output (eventio format)
+TELFIL |${SIM_TELARRAY_PATH}/run_sim_cta     // Telescope photon bunch output (eventio format)
+IACT TELOPT -c ctr_sst_or_mst
+#endif
+IACT PRINT_EVENTS 100 100 1
+*
+* [ IACT tuning parameters ]
+*
+IACT SPLIT_AUTO 15M                    // Split data with more than 15 million bunches
+IACT IO_BUFFER 1000MB                  // At 32 bytes per bunch this could be up to 500 MB
+IACT MAX_BUNCHES 1000000               // Let photon bunch thinning set in earlier.
+*
+* [ This is the end, my friend ]
+*
+EXIT                                   // terminates input
+* ========================================================

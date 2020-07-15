@@ -1,0 +1,399 @@
+* CORSIKA inputs file template for CTA prod-4 simulations at 20 deg zenith angle.
+* Includes alternatives for different primaries (selected by pre-processor),
+* for PRMPAR, ERANGE, VIEWCONE, CSCAT parameters.
+* Includes site definitions for Paranal (CTA-South) site only,
+* for OBSLEV, ATMOSPHERE, and MAGNET parameters.
+* Showers can come from North (default), South, East, or West.
+* Number of showers to be simulated needs to be adapted to run duration for each primary type.
+* SEEDs need to be re-generated for each simulation run separately!!!
+*
+* =============== Corsika INPUTS =======================
+*
+* [ Job parameters ]
+*
+RUNNR   1                               // Number of run, to be auto-numbered by job submission
+EVTNR   1                               // Number of first shower event (usually 1)
+* NSHOW   10                            // for test only
+* CSCAT  1  400e2  0.                   // for test only
+* ERANGE  0.3E3 3E3                     // for test only
+ESLOPE  -2.0          // Slope of primary energy spectrum (-2.0 is equal CPU time per decade)
+*
+* [ Random number generator: 4 sequences used in IACT mode ]
+*
+SEED   385928125   401   0              // Seed for 1st random number sequence, to be re-generated
+SEED   827619802   859   0              // Seed for 2nd random number sequence, to be re-generated
+SEED   195989238   390   0              // Seed for 3rd random number sequence, to be re-generated
+SEED   539053819   323   0              // Seed for 4th random number sequence, to be re-generated
+*
+* [ Primary particle options ]
+*
+#ifdef PRIMARY_GAMMA
+PRMPAR  1             // Particle type of prim. particle (1: gamma; 3: elec, 14: proton, 402: helium)
+ERANGE  3.0 330E3     // Energy range of primary particle (in GeV): gammas & electrons
+NSHOW   10000                          // number of showers to generate
+IACT setenv PRMNAME gamma  // If you want to use the name of the primary in a generated filename.
+#endif
+#ifdef PRIMARY_GAMMA_DIFFUSE
+PRMPAR  1             // Particle type of prim. particle (1: gamma; 3: elec, 14: proton, 402: helium)
+ERANGE  3.0 330E3     // Energy range of primary particle (in GeV): gammas & electrons
+NSHOW   10000                          // number of showers to generate
+IACT setenv PRMNAME gamma-diffuse
+#define DIFFUSE 1
+#endif
+#ifdef PRIMARY_ELECTRON
+PRMPAR  3             // Particle type of prim. particle (3: electron)
+ERANGE  3.0 330E3     // Energy range of primary particle (in GeV): gammas & electrons
+NSHOW   10000                          // number of showers to generate
+IACT setenv PRMNAME electron
+#define DIFFUSE 1
+#endif
+#ifdef PRIMARY_PROTON
+PRMPAR  14            // Particle type of prim. particle (14: proton)
+ERANGE  4.0 600E3     // Energy range of primary particle (in GeV): protons
+NSHOW   25000                          // number of showers to generate
+IACT setenv PRMNAME proton
+#define DIFFUSE 1
+#endif
+#ifdef PRIMARY_HELIUM
+PRMPAR  402           // Particle type of prim. particle (402: helium)
+ERANGE  0.01E3 1200E3 // Energy range of primary particle (in GeV): helium
+NSHOW   15000                          // number of showers to generate
+IACT setenv PRMNAME helium
+#define DIFFUSE 1
+#endif
+#ifdef PRIMARY_NITROGEN
+PRMPAR  1407          // Particle type of prim. particle (1407: nitrogen)
+ERANGE  0.04E3 4000E3 // Energy range of primary particle (in GeV): nitrogen
+NSHOW   3000                          // number of showers to generate
+IACT setenv PRMNAME nitrogen
+#define DIFFUSE 1
+#endif
+#ifdef PRIMARY_SILICON
+PRMPAR  2814          // Particle type of prim. particle (2814: silicon)
+ERANGE  0.05E3 5000E3 // Energy range of primary particle (in GeV): silicon
+NSHOW   2500                          // number of showers to generate
+IACT setenv PRMNAME silicon
+#define DIFFUSE 1
+#endif
+#ifdef PRIMARY_IRON
+PRMPAR  5626          // Particle type of prim. particle (5626: iron)
+ERANGE  0.06E3 6000E3 // Energy range of primary particle (in GeV): iron
+NSHOW   2000                          // number of showers to generate
+IACT setenv PRMNAME iron
+#define DIFFUSE 1
+#endif
+*
+THETAP  20.  20.      // Range of zenith angles (degree)
+IACT setenv ZA 20
+* 
+#if defined(ALIGN_B_FIELD)
+* Geomagnetic field is assumed to be aligned with geographic North (array x axis).
+# define AZM_FROM_SOUTH 0.
+# define AZM_FROM_EAST  90.
+# define AZM_FROM_NORTH 180.
+# define AZM_FROM_WEST  270.
+#elif defined(YEAR2020)
+* Geomagnetic field aligned as predicted for year 2020.0.
+# define AZM_FROM_SOUTH -3.433
+# define AZM_FROM_EAST  86.567
+# define AZM_FROM_NORTH 176.567
+# define AZM_FROM_WEST  266.567
+#else
+* Geomagnetic field aligned as predicted for year 2025.0.
+# define AZM_FROM_SOUTH -4.533
+# define AZM_FROM_EAST  85.467
+# define AZM_FROM_NORTH 175.467
+# define AZM_FROM_WEST  265.467
+#endif
+* 
+#if defined(FROM_SOUTH)
+PHIP $(AZM_FROM_SOUTH) $(AZM_FROM_SOUTH)  // CORSIKA azimuth angles (degree) for primaries coming from South.
+IACT setenv AZM 180     // Corresponding astronomical azimuth, from geographical North towards East.
+#elif defined(FROM_EAST)
+PHIP $(AZM_FROM_EAST) $(AZM_FROM_EAST)  // CORSIKA azimuth angles (degree) for primaries coming from East.
+IACT setenv AZM 90      // Corresponding astronomical azimuth, from geographical North towards East.
+#elif defined(FROM_WEST)
+PHIP $(AZM_FROM_NORTH) $(AZM_FROM_NORTH) // CORSIKA azimuth angles (degree) for primaries coming from West.
+IACT setenv AZM 270     // Corresponding astronomical azimuth, from geographical North towards East.
+#else
+PHIP $(AZM_FROM_NORTH) $(AZM_FROM_NORTH) // CORSIKA azimuth angles (degree) for primaries coming from North.
+IACT setenv AZM 0       // Corresponding astronomical azimuth, from geographical North towards East.
+#endif
+*
+#ifndef DIFFUSE
+VIEWCONE 0. 0.        // Can be a cone around fixed THETAP/PHIP (gamma point source)
+#else
+VIEWCONE 0. 10.     // Diffuse components (gammas, electrons, protons & nuclei)
+#endif
+*
+*  Optionally override prepared demo run settings
+*
+#ifdef NSHOW
+NSHOW    $(NSHOW)            // Requires NSHOW environment variable.
+#endif
+#ifdef EMIN
+# ifdef EMAX
+ERANGE   $(EMIN)E3 $(EMAX)E3 // Requires EMIN and EMAX in units of TeV.
+# endif
+#endif
+#ifdef ESLOPE
+ESLOPE $(ESLOPE)             // Requires spectral slope ESLOPE (<0)
+#endif
+*
+* [ Site specific options ]
+*
+* The selected CTA South site is now near the ESO Paranal observatory:
+*   24.683429 deg South, 70.316345 deg West, altitude: 2150 m a.s.l.
+* Atmosphere 26 at altitude 2150.0 m:
+*   Atmospheric depth at ground level: 798.805 g/cm^2
+*   Density at ground level: 0.00095108 g/cm^3
+*   Refractivity at ground level: 0.00021986
+*   Maximum Cherenkov angle at ground level: 1.2014 deg.
+ATMOSPHERE 26 Y     // Should be slightly better for Paranal than profiles 1 (tropical) or 10 (HESS)
+*
+#ifdef YEAR2020
+* Geomagnetic field for 2020.0:
+MAGNET 20.925 -9.119 // Magnetic field at Paranal site [H, Z] (muT), 2020.
+#else
+* Geomagnetic field for 2025.0:
+MAGNET 20.552 -9.367 // Magnetic field at Paranal site [H, Z] (muT), 2025.
+#endif
+* 
+ARRANG $(AZM_FROM_SOUTH)  // Necessary rotation angle to account for B field declination (deg.)
+* 
+* ./geomag70 IGRF12.COF 2020.00 D K2.150 -24.683429 -70.316345
+* ./geomag70 IGRF13.COF 2025.00 D K2.150 -24.683429 -70.316345
+* 
+* 
+*  Geomag v7.0 - Jan 25, 2010 
+* 
+* 
+*   Model: IGRF2015 
+*   Latitude: -24.68 deg
+*   Longitude: -70.32 deg
+*   Altitude: 2.15 km
+*   Date of Interest:  2020.00
+* 
+*  -------------------------------------------------------------------------------
+*    Date          D           I           H        X        Y        Z        F
+*    (yr)      (deg min)   (deg min)     (nT)     (nT)     (nT)     (nT)     (nT)
+*   2020.00    -3d  26m   -23d  33m   20924.8  20887.2  -1253.5  -9119.4  22825.7
+*  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+*    Date         dD          dI           dH       dX       dY       dZ       dF
+*    (yr)      (min/yr)    (min/yr)    (nT/yr)  (nT/yr)  (nT/yr)  (nT/yr)  (nT/yr)
+*   2020.00     -11.1       -9.2        -79.7    -83.7    -62.6    -32.0    -60.2
+*  -------------------------------------------------------------------------------
+*
+*   Model: IGRF2020 
+*   Latitude: -24.68 deg
+*   Longitude: -70.32 deg
+*   Altitude: 2.15 km
+*   Date of Interest:  2025.00
+* 
+*  -------------------------------------------------------------------------------
+*    Date          D           I           H        X        Y        Z        F
+*    (yr)      (deg min)   (deg min)     (nT)     (nT)     (nT)     (nT)     (nT)
+*   2025.00    -4d  32m   -24d  30m   20551.8  20487.3  -1626.7  -9367.4  22585.9
+*  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+*    Date         dD          dI           dH       dX       dY       dZ       dF
+*    (yr)      (min/yr)    (min/yr)    (nT/yr)  (nT/yr)  (nT/yr)  (nT/yr)  (nT/yr)
+*   2025.00     -12.3      -10.7        -75.9    -81.6    -67.2    -42.7    -51.2
+*  -------------------------------------------------------------------------------
+* 
+* [ Core range ]
+*
+#ifndef DIFFUSE
+CSCAT  10  2000e2  0. // Use shower several times (gammas, point source only)
+#else
+CSCAT  20  2500e2  0. // Use shower several times (protons+electrons+..., larger area for diffuse origin)
+#endif
+#ifdef NSCAT
+# ifdef CSCAT
+CSCAT    $(NSCAT) $(CSCAT)E2 0. // Requires NSCAT (10/20) and CSCAT (in units of meters).
+# endif
+#endif
+*
+* [ Telescope positions, for IACT option ] 
+*
+OBSLEV 2147.E2      // Observation level (in cm) for CTA near Paranal, adapted to lowest telescope.
+*
+* 4 LSTs:
+*
+TELESCOPE     -20.643E2    -64.817E2   34.30E2   12.50E2   # L-01
+TELESCOPE      79.994E2     -0.768E2   29.40E2   12.50E2   # L-02
+TELESCOPE     -19.396E2     65.200E2   31.00E2   12.50E2   # L-03
+TELESCOPE    -120.033E2      1.151E2   33.10E2   12.50E2   # L-04
+*
+* 25 MSTs:
+*
+TELESCOPE      -0.017E2     -0.001E2   24.35E2    8.60E2   # M-01
+TELESCOPE      -1.468E2   -151.221E2   31.00E2    8.60E2   # M-02
+TELESCOPE      -3.138E2   -325.245E2   39.00E2    8.60E2   # M-03
+TELESCOPE       1.434E2    151.220E2   25.00E2    8.60E2   # M-04
+TELESCOPE       3.104E2    325.243E2   23.50E2    8.60E2   # M-05
+TELESCOPE     156.493E2    237.052E2   24.00E2    8.60E2   # M-06
+TELESCOPE     147.428E2     74.202E2   21.00E2    8.60E2   # M-07
+TELESCOPE     145.977E2    -77.019E2   26.00E2    8.60E2   # M-08
+TELESCOPE     151.915E2   -240.013E2   30.00E2    8.60E2   # M-09
+TELESCOPE    -151.949E2    240.011E2   27.00E2    8.60E2   # M-10
+TELESCOPE    -146.011E2     77.017E2   28.00E2    8.60E2   # M-11
+TELESCOPE    -147.462E2    -74.203E2   28.00E2    8.60E2   # M-12
+TELESCOPE    -156.527E2   -237.053E2   38.50E2    8.60E2   # M-13
+TELESCOPE     295.343E2    447.467E2   25.00E2    8.60E2   # M-14
+TELESCOPE     317.086E2    159.593E2   18.50E2    8.60E2   # M-15
+TELESCOPE     308.425E2     -2.960E2   19.50E2    8.60E2   # M-16
+TELESCOPE     313.965E2   -165.650E2   22.50E2    8.60E2   # M-17
+TELESCOPE     286.702E2   -453.054E2   38.50E2    8.60E2   # M-18
+TELESCOPE    -286.835E2    453.054E2   17.00E2    8.60E2   # M-19
+TELESCOPE    -313.599E2    165.646E2   30.50E2    8.60E2   # M-20
+TELESCOPE    -308.459E2      2.959E2   29.50E2    8.60E2   # M-21
+TELESCOPE    -316.720E2   -159.598E2   35.00E2    8.60E2   # M-22
+TELESCOPE    -295.477E2   -447.468E2   52.00E2    8.60E2   # M-23
+TELESCOPE     582.262E2     -5.588E2   13.50E2    8.60E2   # M-24
+TELESCOPE    -582.296E2      5.587E2   36.00E2    8.60E2   # M-25
+*
+* 70 SSTs:
+*
+TELESCOPE     207.036E2    156.949E2   14.25E2    3.00E2   # S-01
+TELESCOPE     203.986E2   -160.894E2   19.75E2    3.00E2   # S-02
+TELESCOPE    -204.020E2    160.893E2   22.25E2    3.00E2   # S-03
+TELESCOPE    -207.070E2   -156.950E2   28.25E2    3.00E2   # S-04
+TELESCOPE     168.882E2    423.275E2   18.25E2    3.00E2   # S-05
+TELESCOPE     160.729E2   -426.440E2   33.25E2    3.00E2   # S-06
+TELESCOPE    -160.762E2    426.438E2   10.25E2    3.00E2   # S-07
+TELESCOPE    -168.916E2   -423.277E2   42.25E2    3.00E2   # S-08
+TELESCOPE       4.972E2    519.869E2   11.75E2    3.00E2   # S-09
+TELESCOPE      -5.006E2   -519.871E2   41.25E2    3.00E2   # S-10
+TELESCOPE     395.510E2    399.996E2   11.25E2    3.00E2   # S-11
+TELESCOPE     387.762E2   -407.513E2   28.25E2    3.00E2   # S-12
+TELESCOPE    -387.795E2    407.512E2   13.25E2    3.00E2   # S-13
+TELESCOPE    -395.545E2   -399.997E2   50.25E2    3.00E2   # S-14
+TELESCOPE     495.605E2    105.269E2    9.25E2    3.00E2   # S-15
+TELESCOPE     493.494E2   -114.761E2   11.75E2    3.00E2   # S-16
+TELESCOPE    -493.528E2    114.760E2   28.25E2    3.00E2   # S-17
+TELESCOPE    -495.640E2   -105.269E2   30.25E2    3.00E2   # S-18
+TELESCOPE       6.927E2    723.596E2   11.75E2    3.00E2   # S-19
+TELESCOPE      -6.961E2   -723.599E2   59.75E2    3.00E2   # S-20
+TELESCOPE     621.223E2    312.711E2    7.25E2    3.00E2   # S-21
+TELESCOPE     615.114E2   -324.075E2   19.25E2    3.00E2   # S-22
+TELESCOPE    -615.142E2    324.575E2   19.75E2    3.00E2   # S-23
+TELESCOPE    -621.259E2   -312.711E2   49.25E2    3.00E2   # S-24
+TELESCOPE     441.802E2    669.112E2   30.25E2    3.00E2   # S-25
+TELESCOPE     428.882E2   -677.470E2   47.25E2    3.00E2   # S-26
+TELESCOPE    -428.914E2    677.467E2    7.25E2    3.00E2   # S-27
+TELESCOPE    -441.838E2   -669.114E2   70.25E2    3.00E2   # S-28
+TELESCOPE     820.094E2     -7.869E2    4.25E2    3.00E2   # S-29
+TELESCOPE    -820.128E2      7.870E2   30.75E2    3.00E2   # S-30
+TELESCOPE     228.460E2    794.887E2   25.25E2    3.00E2   # S-31
+TELESCOPE     213.165E2   -799.128E2   56.25E2    3.00E2   # S-32
+TELESCOPE    -213.198E2    799.125E2   10.25E2    3.00E2   # S-33
+TELESCOPE    -228.495E2   -794.890E2   68.25E2    3.00E2   # S-34
+TELESCOPE       9.046E2    944.425E2   27.25E2    3.00E2   # S-35
+TELESCOPE      -9.080E2   -944.430E2   75.25E2    3.00E2   # S-36
+TELESCOPE     668.034E2    562.918E2   13.25E2    3.00E2   # S-37
+TELESCOPE     657.111E2   -575.635E2   43.25E2    3.00E2   # S-38
+TELESCOPE    -657.142E2    575.635E2    8.25E2    3.00E2   # S-39
+TELESCOPE    -668.070E2   -562.919E2   66.25E2    3.00E2   # S-40
+TELESCOPE     885.687E2    219.253E2    6.25E2    3.00E2   # S-41
+TELESCOPE     881.318E2   -236.208E2    9.25E2    3.00E2   # S-42
+TELESCOPE    -881.350E2    236.210E2   24.25E2    3.00E2   # S-43
+TELESCOPE    -885.722E2   -219.252E2   42.25E2    3.00E2   # S-44
+TELESCOPE     920.537E2    463.474E2   12.75E2    3.00E2   # S-45
+TELESCOPE     911.476E2   -481.054E2   26.25E2    3.00E2   # S-46
+TELESCOPE    -911.507E2    481.054E2   11.25E2    3.00E2   # S-47
+TELESCOPE    -920.574E2   -463.473E2   59.25E2    3.00E2   # S-48
+TELESCOPE     480.366E2    966.809E2   56.25E2    3.00E2   # S-49
+TELESCOPE     461.727E2   -975.853E2   65.75E2    3.00E2   # S-50
+TELESCOPE    -461.758E2    975.849E2   16.75E2    3.00E2   # S-51
+TELESCOPE    -480.403E2   -966.813E2   87.25E2    3.00E2   # S-52
+TELESCOPE     714.732E2    843.133E2   49.25E2    3.00E2   # S-53
+TELESCOPE     698.425E2   -856.696E2   53.75E2    3.00E2   # S-54
+TELESCOPE    -698.455E2    856.694E2   14.75E2    3.00E2   # S-55
+TELESCOPE    -714.770E2   -843.135E2   84.75E2    3.00E2   # S-56
+TELESCOPE    1100.131E2    -10.556E2    3.75E2    3.00E2   # S-57
+TELESCOPE   -1100.165E2     10.558E2   27.75E2    3.00E2   # S-58
+TELESCOPE     249.865E2   1107.552E2   55.25E2    3.00E2   # S-59
+TELESCOPE     228.566E2  -1112.148E2   77.75E2    3.00E2   # S-60
+TELESCOPE    -227.398E2   1112.131E2   25.25E2    3.00E2   # S-61
+TELESCOPE    -249.900E2  -1107.557E2   89.25E2    3.00E2   # S-62
+TELESCOPE     964.010E2    730.717E2   27.25E2    3.00E2   # S-63
+TELESCOPE     949.814E2   -749.083E2   46.25E2    3.00E2   # S-64
+TELESCOPE    -949.844E2    749.082E2   17.25E2    3.00E2   # S-65
+TELESCOPE    -964.048E2   -730.717E2   83.25E2    3.00E2   # S-66
+TELESCOPE    1199.684E2    357.573E2   10.25E2    3.00E2   # S-67
+TELESCOPE    1192.605E2   -380.527E2   19.25E2    3.00E2   # S-68
+TELESCOPE   -1192.635E2    380.530E2   12.75E2    3.00E2   # S-69
+TELESCOPE   -1199.721E2   -357.570E2   47.25E2    3.00E2   # S-70
+*
+* 25 extra MSTs (other camera type):
+*
+TELESCOPE      -0.017E2     -0.001E2   24.35E2    8.60E2   # M-01
+TELESCOPE      -1.468E2   -151.221E2   31.00E2    8.60E2   # M-02
+TELESCOPE      -3.138E2   -325.245E2   39.00E2    8.60E2   # M-03
+TELESCOPE       1.434E2    151.220E2   25.00E2    8.60E2   # M-04
+TELESCOPE       3.104E2    325.243E2   23.50E2    8.60E2   # M-05
+TELESCOPE     156.493E2    237.052E2   24.00E2    8.60E2   # M-06
+TELESCOPE     147.428E2     74.202E2   21.00E2    8.60E2   # M-07
+TELESCOPE     145.977E2    -77.019E2   26.00E2    8.60E2   # M-08
+TELESCOPE     151.915E2   -240.013E2   30.00E2    8.60E2   # M-09
+TELESCOPE    -151.949E2    240.011E2   27.00E2    8.60E2   # M-10
+TELESCOPE    -146.011E2     77.017E2   28.00E2    8.60E2   # M-11
+TELESCOPE    -147.462E2    -74.203E2   28.00E2    8.60E2   # M-12
+TELESCOPE    -156.527E2   -237.053E2   38.50E2    8.60E2   # M-13
+TELESCOPE     295.343E2    447.467E2   25.00E2    8.60E2   # M-14
+TELESCOPE     317.086E2    159.593E2   18.50E2    8.60E2   # M-15
+TELESCOPE     308.425E2     -2.960E2   19.50E2    8.60E2   # M-16
+TELESCOPE     313.965E2   -165.650E2   22.50E2    8.60E2   # M-17
+TELESCOPE     286.702E2   -453.054E2   38.50E2    8.60E2   # M-18
+TELESCOPE    -286.835E2    453.054E2   17.00E2    8.60E2   # M-19
+TELESCOPE    -313.599E2    165.646E2   30.50E2    8.60E2   # M-20
+TELESCOPE    -308.459E2      2.959E2   29.50E2    8.60E2   # M-21
+TELESCOPE    -316.720E2   -159.598E2   35.00E2    8.60E2   # M-22
+TELESCOPE    -295.477E2   -447.468E2   52.00E2    8.60E2   # M-23
+TELESCOPE     582.262E2     -5.588E2   13.50E2    8.60E2   # M-24
+TELESCOPE    -582.296E2      5.587E2   36.00E2    8.60E2   # M-25
+*
+* [Interaction flags]
+*
+FIXHEI  0.  0          // First interaction height & target (0. 0 for random)
+FIXCHI  0.             // Starting altitude (g/cm**2). 0. is at boundary to space.
+TSTART  T              // Needed for emission and scattering of primary
+ECUTS   0.3  0.1  0.020  0.020         // Energy cuts for particles
+MUADDI  F                              // Additional info for muons not needed
+MUMULT  T                              // Muon multiple scattering angle
+LONGI   T  20.  F  F                   // Longit.distr. & step size & fit
+MAXPRT  0                              // Max. number of printed events
+ECTMAP  1.E6                           // Cut on gamma factor for printout
+STEPFC  1.0                            // Mult. scattering step length factor
+*
+* [ Cherenkov emission parameters ]
+*
+CERSIZ  5.         // Not above 10 for super/ultra-bialkali QE; 7 is fairly OK; 5 should be safe.
+CERFIL  F                              // No old-style Cherenkov output to extra file
+CWAVLG  240.  1000.                    // Cherenkov wavelength band - note SSTs sensitive into IR region.
+*
+* [ Debugging and output options ]
+*
+DEBUG   F  6  F  1000000               // Debug flag and logical unit for output
+DATBAS yes                             // Write a file with parameters used
+DIRECT  /dev/null                      // /dev/null means no normal CORSIKA data written
+#ifdef WITHOUT_MULTIPIPE
+* TELFIL cta-prod5-paranal-baseline.corsika.gz       // If telescope simulation not done directly in pipe
+TELFIL run${RUNNR}_${PRMNAME}_za${ZA}deg_azm${AZM}deg-paranal-baseline${extra_suffix2}.corsika.zst
+#else
+* TELFIL |${SIM_TELARRAY_PATH}/run_sim_cta-prod5-paranal-baseline:100:100:1     // Telescope photon bunch output (eventio format)
+TELFIL |${SIM_TELARRAY_PATH}/run_sim_cta     // Telescope photon bunch output (eventio format)
+IACT TELOPT -c cta-prod5-paranal-baseline
+#endif
+IACT PRINT_EVENTS 100 100 1
+*
+* [ IACT tuning parameters ]
+*
+IACT SPLIT_AUTO 15M                    // Split data with more than 15 million bunches
+IACT IO_BUFFER 1000MB                  // At 32 bytes per bunch this could be up to 500 MB
+IACT MAX_BUNCHES 1000000               // Let photon bunch thinning set in earlier.
+*
+* [ This is the end, my friend ]
+*
+EXIT                                   // terminates input
+* ========================================================
