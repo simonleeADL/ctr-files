@@ -75,24 +75,26 @@ case "$choice" in
       ;;
 esac
 
+site_radius=160
+
 case "$choice" in
    1g|1p|1d)
-      defs="${defs} -DCSCAT=500"
+      defs="${defs} -DCSCAT=$((500 + site_radius))"
       ;;
    2g)
-      defs="${defs} -DCSCAT=800"
+      defs="${defs} -DCSCAT=$((800 + site_radius))"
       ;;
    2p|2d|3g)
-      defs="${defs} -DCSCAT=900"
+      defs="${defs} -DCSCAT=$((900 + site_radius))"
       ;;
    3p|3d)
-      defs="${defs} -DCSCAT=1200"
+      defs="${defs} -DCSCAT=$((1200 + site_radius))"
       ;;
    4g)
-      defs="${defs} -DCSCAT=1000"
+      defs="${defs} -DCSCAT=$((1000 + site_radius))"
       ;;
    4p|4d)
-      defs="${defs} -DCSCAT=1500"
+      defs="${defs} -DCSCAT=$((1500 + site_radius))"
       ;;
    *)
       echo "Choose from ranges 1 to 4 plus primary letter (1g,1p,1d etc.)"
